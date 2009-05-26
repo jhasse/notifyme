@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import gobject
+import gtk
+import os
+import gtk.glade
+import pynotify
+import time
+
+PROGRAM_NAME = "Notify Me"
+PROGRAM_VERSION = "0.3"
+PREFIX = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+
+class NotifyMe:
+
+	def __init__(self):
+		self.icon = gtk.status_icon_new_from_file(os.path.join(PREFIX, "share/notifyme/notifyme.png"))
+		helper = gtk.Button()
+		icon = helper.render_icon(gtk.STOCK_DIALOG_INFO, gtk.ICON_SIZE_DIALOG)
+		self.menu = gtk.Menu()
+
+		self.item = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES)
+		self.item.connect_object('activate', self.preferences, None)
+		self.menu.append(self.item)
+		
+		self.item = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
+		self.item.connect_object('activate', self.about, None)
+		self.menu.append(self.item)
+		
+		self.item = gtk.ImageMenuItem(gtk.STOCK_QUIT)
+		self.item.connect_object('activate', self.callback_Exit, None)
+		self.menu.append(self.item)
+		
+		self.menu.show_all()
+		self.icon.connect('popup-menu', self.popup)
+
+		#about
+		self.abt = gtk.AboutDialog()
+		#default icon
+		gtk.window_set_default_icon_from_file(os.path.join(PREFIX, "share/notifyme/notifyme.png"))
+
+		self.abt.set_name(PROGRAM_NAME)
+		self.abt.set_version(PROGRAM_VERSION)
+		self.abt.set_comments("NotifyMe is a small tool which notifies you every x seconds.")
+		self.abt.set_authors(["Jan Niklas Hasse <jhasse@gmail.com>"])
+		self.abt.set_copyright("Copyright 2009 Jan Niklas Hasse")
+		gtk.about_dialog_set_url_hook(lambda dialog, url: gtk.show_uri(dialog.get_screen(), url, 0))
+		gtk.about_dialog_set_email_hook(lambda dialog, email: url_show('mailto:'+email))
+		self.abt.set_website("http://github.com/jhasse/notifyme")
+		self.abt.set_website_label("github.com/jhasse/notifyme")
+		
+		self.glade = None
+		
+		self.interval = 900
+		self.spawn_timeout()
+		gobject.timeout_add_seconds(1, self.update_tooltip)
+	
+	def spawn_timeout(self):
+		gobject.timeout_add_seconds(self.interval, self.notify_me)
+		self.start_time = int(time.time())
+	
+	def update_tooltip(self):
+		self.icon.set_tooltip("Notifying you in " + str(self.interval - (int(time.time()) - self.start_time)) + " seconds!")
+		return True
+	
+	def notify_me(self):
+		geometry = self.icon.get_geometry()
+		self.notify = pynotify.Notification("Notifying You!", time.strftime("%H:%M",time.localtime()), None, None)
+		self.notify.set_hint("x", geometry[1].x + 8)
+		self.notify.set_hint("y", geometry[1].y + 11)
+		helper = gtk.Button()
+		icon = helper.render_icon(gtk.STOCK_DIALOG_INFO, gtk.ICON_SIZE_DIALOG)
+		self.notify.set_icon_from_pixbuf(icon)
+		self.notify.show()
+		self.spawn_timeout()
+		return False		
+		
+	def popup(self, status, button, time):
+		self.menu.popup(None, None, gtk.status_icon_position_menu, button, time, self.icon)
+
+	def preferences(self, data):
+		pass
+
+	def on_delete_event(self, widget, event):
+		self.glade = None
+		return False
+
+	def about(self, data):
+		self.abt.show_all()
+		self.abt.run()
+		self.abt.hide_all()
+
+	def callback_Exit(self, data):
+		gtk.main_quit()
+
+
+if __name__ == '__main__':
+	pynotify.init("Notify Me")
+	object = NotifyMe()
+	gtk.main()
