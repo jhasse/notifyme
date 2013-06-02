@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 
 from PyQt4 import QtCore, QtGui
+import os
+
+PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 class TrayIcon(QtGui.QSystemTrayIcon):
     def __init__(self):
         super().__init__()
 
-        self.setIcon(QtGui.QIcon("notifyme.png"))
+        self.setIcon(QtGui.QIcon(os.path.join(PREFIX, "share/notifyme/notifyme.png")))
         self.trayIconMenu = QtGui.QMenu()
         self.trayIconMenu.addAction(QtGui.QAction("&Quit", self, triggered=QtGui.qApp.quit))
         self.setContextMenu(self.trayIconMenu)
         self.show()
-        self.showMessage("notifyme 0.1", "running ...", QtGui.QSystemTrayIcon.Information)
+        self.showMessage("notifyme-qt 0.2", "running ...", QtGui.QSystemTrayIcon.Information)
 
         self.timer = QtCore.QTimer()
         QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.notify)
-        self.timer.start(20 * 1000)
+        self.timer.start(900 * 1000)
 
     def notify(self):
         self.showMessage("Notifying you!", "blub", QtGui.QSystemTrayIcon.Information)
