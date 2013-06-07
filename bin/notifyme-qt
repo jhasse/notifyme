@@ -3,6 +3,7 @@
 from PyQt4 import QtCore, QtGui
 import os
 
+SELF = os.path.abspath(__file__)
 PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 class TrayIcon(QtGui.QSystemTrayIcon):
@@ -11,14 +12,23 @@ class TrayIcon(QtGui.QSystemTrayIcon):
 
         self.setIcon(QtGui.QIcon(os.path.join(PREFIX, "share/notifyme/notifyme.png")))
         self.trayIconMenu = QtGui.QMenu()
+        checkbox = QtGui.QAction("&Autostart on Boot", self, triggered=self.autostart)
+        checkbox.setCheckable(True)
+        self.trayIconMenu.addAction(checkbox)
         self.trayIconMenu.addAction(QtGui.QAction("&Quit", self, triggered=QtGui.qApp.quit))
         self.setContextMenu(self.trayIconMenu)
         self.show()
-        self.showMessage("notifyme-qt 0.2", "running ...", QtGui.QSystemTrayIcon.Information)
+        self.showMessage("notifyme-qt 0.3", "running ...", QtGui.QSystemTrayIcon.Information)
 
         self.timer = QtCore.QTimer()
         QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.notify)
         self.timer.start(900 * 1000)
+
+    def autostart(self, checked):
+        if checked:
+            self.create_autostart()
+        else:
+            self.delete_autostart()
 
     def notify(self):
         self.showMessage("Notifying you!", "blub", QtGui.QSystemTrayIcon.Information)
